@@ -1,4 +1,7 @@
-package org.example;
+package org.example.core;
+
+import org.example.model.DiagnosticQuestion;
+import org.example.model.DiagnosticTest;
 
 import java.util.List;
 import java.util.Map;

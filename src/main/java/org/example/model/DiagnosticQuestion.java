@@ -1,4 +1,4 @@
-package org.example;
+package org.example.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -6,6 +6,9 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.stream.Collectors;
 
 public class DiagnosticQuestion {
     private String questionText;
@@ -35,7 +38,10 @@ public class DiagnosticQuestion {
     }
 
     public List<String> getPossibleAnswers() {
-        return new ArrayList<>(answerValues.keySet());
+        return answerValues.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
     }
 
     public Integer getValueForAnswer(String answer) {
