@@ -7,7 +7,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import java.io.IOException;
 import java.util.*;
 
-class MedicalDiagnosisBot extends TelegramLongPollingBot {
+public class MedicalDiagnosisBot extends TelegramLongPollingBot {
     private Map<String, DiagnosisSession> userSessions = new HashMap<>();
     private List<DiagnosticTest> availableTests;
 
@@ -41,6 +41,8 @@ class MedicalDiagnosisBot extends TelegramLongPollingBot {
             return startCommand(chatId);
         } else if (message.startsWith("/mosf")) {
             return startMOSFTest(chatId);
+        } else if (message.startsWith("/sofa")) {
+            return startSOFATest(chatId);
         } else if (message.startsWith("/cancel")) {
             return cancelSession(chatId);
         } else {
@@ -52,7 +54,8 @@ class MedicalDiagnosisBot extends TelegramLongPollingBot {
         return createMessage(chatId,
                 "Добро пожаловать в медицинский диагностический бот!\n\n" +
                         "Доступные тесты:\n" +
-                        "/mosf - Оценка множественной органной дисфункции по Маршаллу\n\n" +
+                        "/mosf - Оценка множественной органной дисфункции по Маршаллу\n" +
+                        "/sofa - Последовательная оценка органной недостаточности (SOFA)\n\n" +
                         "Для отмены текущего теста используйте /cancel");
     }
 
@@ -68,6 +71,23 @@ class MedicalDiagnosisBot extends TelegramLongPollingBot {
         }
 
         DiagnosisSession session = new DiagnosisSession(mosfTest);
+        userSessions.put(chatId, session);
+
+        return askNextQuestion(chatId, session);
+    }
+
+    private SendMessage startSOFATest(String chatId) {
+        DiagnosticTest sofaTest = availableTests.stream()
+                .filter(t -> t.getTestName().contains("SOFA (Sequential Organ Failure Assessment)"))
+                .findFirst()
+                .orElse(null);
+
+        if (sofaTest == null) {
+            System.out.println("Тест SOFA не найден в доступных тестах."); // Debug statement
+            return createMessage(chatId, "Тест не доступен");
+        }
+
+        DiagnosisSession session = new DiagnosisSession(sofaTest);
         userSessions.put(chatId, session);
 
         return askNextQuestion(chatId, session);
@@ -97,7 +117,8 @@ class MedicalDiagnosisBot extends TelegramLongPollingBot {
         if (session == null) {
             return createMessage(chatId,
                     "У вас нет активного теста. Начните тест с помощью команд:\n" +
-                            "/mosf - Marshall Multiple Organ Dysfunction Score (MOSF)");
+                            "/mosf - Оценка множественной органной дисфункции по Маршаллу\n" +
+                            "/sofa - Последовательная оценка органной недостаточности (SOFA)\n\n");
         }
 
         try {
@@ -124,7 +145,8 @@ class MedicalDiagnosisBot extends TelegramLongPollingBot {
                         "Диагностика завершена.\n\n" +
                                 "Результат: " + diagnosis + "\n\n" +
                                 "Для нового теста используйте команды:\n" +
-                                "/mosf - Marshall Multiple Organ Dysfunction Score (MOSF)");
+                                "/mosf - Оценка множественной органной дисфункции по Маршаллу\n" +
+                                "/sofa - Последовательная оценка органной недостаточности (SOFA)\n\n");
             } else {
                 return askNextQuestion(chatId, session);
             }
@@ -137,7 +159,8 @@ class MedicalDiagnosisBot extends TelegramLongPollingBot {
         userSessions.remove(chatId);
         return createMessage(chatId,
                 "Текущий тест отменен. Вы можете начать новый тест:\n" +
-                        "/mosf - Marshall Multiple Organ Dysfunction Score (MOSF)");
+                        "/mosf - Оценка множественной органной дисфункции по Маршаллу\n" +
+                        "/sofa - Последовательная оценка органной недостаточности (SOFA)\n\n");
     }
 
     private SendMessage createMessage(String chatId, String text) {
